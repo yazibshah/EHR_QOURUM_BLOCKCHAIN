@@ -5,7 +5,6 @@ const { ethers } = require("hardhat");
 
 describe("HealthCare", function () {
   let HealthCare;
-  let healthCare;
   let owner;
   let patient1;
   let patient2;
@@ -81,5 +80,83 @@ describe("HealthCare", function () {
     });
   });
 
- });
+  describe("revokeAccess", function () {
+    it("should allow patients to revoke access granted to a doctor", async function () {
+      // Patient grants access to the doctor
+      await HealthCare.connect(patient1).signupPatient("Muzna", 23);
+      await HealthCare.connect(doctor).signupDoctor("Doctor");
+      await HealthCare.connect(patient1).grantAccessToDoctor(doctor.address);
+
+      // Verify that the doctor has access before revocation
+      const beforeAccess = await HealthCare.connect(doctor).getPatientInfoForDoctor(patient1.address);
+      expect(beforeAccess[0]).to.equal("Muzna");
+      expect(beforeAccess[1]).to.equal(23); // Assuming 1 doctor has access initially
+
+      // Patient revokes access to the doctor
+      await HealthCare.connect(patient1).revokeAccess(doctor.address);
+
+
+    });
+
+    it("should revert if the doctor does not have access to revoke", async function () {
+      // Attempt to revoke access that was not granted
+      await expect(HealthCare.connect(doctor).revokeAccess(doctor.address)).to.be.revertedWith("Doctor does not have access to revoke");
+    });
+  });
+
+
+  describe("addFileByDoctor", function () {
+    it("should allow doctors to add files to patient data", async function () {
+      // Patient signs up
+      await HealthCare.connect(patient1).signupPatient("Patient1", 30);
+
+      // Doctor signs up
+      await HealthCare.connect(doctor).signupDoctor("Doctor1");
+
+      // Grant access to the doctor by the patient
+      await HealthCare.connect(patient1).grantAccessToDoctor(doctor.address);
+
+      // Add file by the doctor to the patient's data
+      const fileHash = "0x3fd54831f488a22b28398de0c567a3b064b937f54f81739ae9bd545967f3abab";
+      await HealthCare.connect(doctor).addFileByDoctor(patient1.address, "File1", "PDF", fileHash, "secret");
+
+      // Retrieve patient information to check if the file was added
+      const patientInfo = await HealthCare.connect(doctor).getPatientInfoForDoctor(patient1.address);
+      expect(patientInfo[0]).to.equal("Patient1");
+      expect(patientInfo[3]).to.include(fileHash); // Expecting the file hash to be included in the patient's files
+    });
+
+    it("should revert if doctor does not have access to add files", async function () {
+      // Patient signs up
+      await HealthCare.connect(patient1).signupPatient("Patient1", 30);
+
+      // Doctor signs up but does not have access
+
+      // Attempt to add file by the doctor without access
+      await expect(HealthCare.connect(doctor).addFileByDoctor(patient1.address, "File1", "PDF", "0x3fd54831f488a22b28398de0c567a3b064b937f54f81739ae9bd545967f3abab", "secret"))
+        .to.be.revertedWith("Doctor does not have access to add files");
+    });
+
+    it("should revert if file already exists", async function () {
+      // Patient signs up
+      await HealthCare.connect(patient1).signupPatient("Patient1", 30);
+
+      // Doctor signs up
+      await HealthCare.connect(doctor).signupDoctor("Doctor1");
+
+      // Grant access to the doctor by the patient
+      await HealthCare.connect(patient1).grantAccessToDoctor(doctor.address);
+
+      // Add file by the doctor to the patient's data
+      const fileHash = "0x3fd54831f488a22b28398de0c567a3b064b937f54f81739ae9bd545967f3abab";
+      await HealthCare.connect(doctor).addFileByDoctor(patient1.address, "File1", "PDF", fileHash, "secret");
+
+      // Attempt to add the same file again
+      await expect(HealthCare.connect(doctor).addFileByDoctor(patient1.address, "File2", "PDF", fileHash, "secret"))
+        .to.be.revertedWith("File already exists");
+    });
+  });
+});
+
+
  

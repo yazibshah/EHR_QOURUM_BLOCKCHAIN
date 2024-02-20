@@ -16,8 +16,8 @@ const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
 
 // Walets Private Keys
-const doctorPrivateKey=new ethers.Wallet("a36c24e21862a145c4d6c9b75af8185d3018a8f6d6c0dfc126efa79475081bb7",provider);//cc
-const patientPrivateKey=new ethers.Wallet("08253c7aa3c92649df44a67b98ae682e9ac642b270ca0347d45a1d827a32e94b",provider);//f
+const doctorPrivateKey=new ethers.Wallet("",provider);//cc
+const patientPrivateKey=new ethers.Wallet("",provider);//f
 
 // Wallet Addresses
 patientAddress="0xc8F14E3712AaF0c3b5a921Cc1926a0eCE3bB64f5";

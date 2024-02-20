@@ -43,6 +43,8 @@ contract HealthCare is Doctor, Patient, File {
         else
             return ('', '');
     }
+
+    /* Grant Access to Doctor */
   
     function grantAccessToDoctor(address doctor_id) public {
         patient storage p = patients[msg.sender];
@@ -55,7 +57,35 @@ contract HealthCare is Doctor, Patient, File {
         patientToDoctor[msg.sender][doctor_id] = pos;
         d.patient_list.push(msg.sender);
     }
-  
+
+// Function to revoke access granted to a doctor by a patient
+    function revokeAccess(address doctor_id) public {
+        patient storage p = patients[msg.sender];
+        require(patientToDoctor[msg.sender][doctor_id] > 0, "Doctor does not have access to revoke");
+        
+        // Remove the doctor from the patient's doctor list
+        for (uint i = 0; i < p.doctor_list.length; i++) {
+            if (p.doctor_list[i] == doctor_id) {
+                delete p.doctor_list[i];
+                break;
+            }
+        }
+        
+        // Remove the patient from the doctor's patient list
+        doctor storage d = doctors[doctor_id];
+        for (uint j = 0; j < d.patient_list.length; j++) {
+            if (d.patient_list[j] == msg.sender) {
+                delete d.patient_list[j];
+                break;
+            }
+        }
+        
+        // Remove the doctor's access to the patient's data
+        delete patientToDoctor[msg.sender][doctor_id];
+    }
+
+
+    /* Add File By Patient */
     function addFile(string memory _file_name, string memory _file_type, string memory _fileHash, string memory _file_secret) public {
         patient storage  p = patients[msg.sender];
 
@@ -66,6 +96,21 @@ contract HealthCare is Doctor, Patient, File {
         uint pos = p.files.length;
         patientToFile[msg.sender][_fileHash] = pos;
     }
+
+    /* Add File By Doctor */
+        function addFileByDoctor(address patientAddress, string memory _file_name, string memory _file_type, string memory _fileHash, string memory _file_secret) public {
+        patient storage p = patients[patientAddress];
+
+        require(patientToDoctor[patientAddress][msg.sender] > 0, "Doctor does not have access to add files");
+
+        require(patientToFile[patientAddress][_fileHash] == 0, "File already exists");
+
+        hashToFile[_fileHash] = filesInfo({file_name: _file_name, file_type: _file_type, file_secret: _file_secret});
+        p.files.push(_fileHash);
+        uint pos = p.files.length;
+        patientToFile[patientAddress][_fileHash] = pos;
+    }
+
     
     function getPatientInfoForDoctor(address pat) public view checkPatient(pat) checkDoctor(msg.sender) returns(string memory , uint8, address, string[] memory ){
         patient memory p = patients[pat];

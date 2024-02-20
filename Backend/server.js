@@ -13,8 +13,8 @@ const contractAddress = '0x048f3Ab0D1D91a862A38d7ba3cd91D1d097C9524'; // Your sm
 const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
 // Walets Private Keys
-const doctorPrivateKey = new ethers.Wallet("a36c24e21862a145c4d6c9b75af8185d3018a8f6d6c0dfc126efa79475081bb7", provider);
-const patientPrivateKey = new ethers.Wallet("08253c7aa3c92649df44a67b98ae682e9ac642b270ca0347d45a1d827a32e94b", provider);
+const doctorPrivateKey = new ethers.Wallet("", provider);
+const patientPrivateKey = new ethers.Wallet("", provider);
 
 // Wallet Addresses
 const patientAddress = "0xc8F14E3712AaF0c3b5a921Cc1926a0eCE3bB64f5";
@@ -91,6 +91,23 @@ app.get('/file/info', async (req, res) => {
         res.status(500).json({ error: "File does not exist or an error occurred" });
     }
 });
+
+
+/* =========New Things Add========== */
+// Add file by doctor
+app.post('/doctor/add-file', async (req, res) => {
+    const { patientAddress, fileName, fileType, fileHash, fileSecret } = req.body;
+    const tx = await contract.connect(doctorPrivateKey).addFileByDoctor(patientAddress, fileName, fileType, fileHash, fileSecret);
+    res.send(tx.hash);
+});
+
+// Revoke access granted to a doctor by a patient
+app.post('/patient/revoke-access', async (req, res) => {
+    const { doctorId } = req.body;
+    const tx = await contract.connect(patientPrivateKey).revokeAccess(doctorId);
+    res.send(tx.hash);
+});
+
 
 // Start the server
 app.listen(port, () => {
